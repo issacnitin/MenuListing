@@ -34,13 +34,10 @@ import static com.beerwithai.listmenu.R.id.fab;
 
 public class MainActivity extends AppCompatActivity {
 
-    ArrayList<String> st = new ArrayList<String>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        st.add("abc");
-        st.add("def");
         String result="", url="http://10.0.2.2:8000/thanks/";
         try {
             result = new RetrieveFeedTask().execute(url).get();
