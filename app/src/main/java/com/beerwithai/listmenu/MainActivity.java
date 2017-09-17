@@ -2,42 +2,68 @@ package com.beerwithai.listmenu;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLReader;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+import android.support.v4.app.*;
 
-import static com.beerwithai.listmenu.R.id.fab;
+import static android.R.attr.lines;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends FragmentActivity {
+
+    static final int NUM_ITEMS = 3;
+
+    MyAdapter mAdapter;
+
+    ViewPager mPager;
+
+    static String[] sCheeseStrings = {"tab1", "tab2", "tab3"};
+    static String[] lines;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mAdapter = new MyAdapter(getSupportFragmentManager());
+
+        mPager = (ViewPager)findViewById(R.id.pager);
+        mPager.setAdapter(mAdapter);
+
+        // Watch for button clicks.
+        Button button = (Button)findViewById(R.id.goto_first);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPager.setCurrentItem(0);
+            }
+        });
+        button = (Button)findViewById(R.id.goto_last);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPager.setCurrentItem(NUM_ITEMS-1);
+            }
+        });
+
+        TabLayout tabLayout = (TabLayout)findViewById(R.id.tab_layout);
+        tabLayout.setupWithViewPager(mPager);
+
         String result="", url="http://10.0.2.2:8000/thanks/";
         try {
             result = new RetrieveFeedTask().execute(url).get();
@@ -45,16 +71,83 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         Log.d("Debug", result);
-        final String lines[] = result.split("  ");
-        ArrayAdapter<String> arr = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, lines);
-        ListView lt = (ListView)findViewById(R.id.lView);
-        lt.setAdapter(arr);
-        lt.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Toast.makeText(getApplicationContext(), lines[i], Toast.LENGTH_LONG).show();
-            }
-        });
+        lines = result.split(" ");
+
+    }
+
+    public static class MyAdapter extends FragmentPagerAdapter {
+        public MyAdapter(FragmentManager fm) {
+            super(fm);
+        }
+
+        @Override
+        public int getCount() {
+            return NUM_ITEMS;
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            return ArrayListFragment.newInstance(position);
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return "Title #" + position;
+        }
+    }
+
+    public static class ArrayListFragment extends ListFragment {
+        int mNum;
+
+        /**
+         * Create a new instance of CountingFragment, providing "num"
+         * as an argument.
+         */
+        static ArrayListFragment newInstance(int num) {
+            ArrayListFragment f = new ArrayListFragment();
+
+            // Supply num input as an argument.
+            Bundle args = new Bundle();
+            args.putInt("num", num);
+            f.setArguments(args);
+
+            return f;
+        }
+
+        /**
+         * When creating, retrieve this instance's number from its arguments.
+         */
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            mNum = getArguments() != null ? getArguments().getInt("num") : 1;
+        }
+
+        /**
+         * The Fragment's UI is just a simple text view showing its
+         * instance number.
+         */
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            View v = inflater.inflate(R.layout.content_main, container, false);
+            View tv = v.findViewById(R.id.text);
+            if(mNum < lines.length)
+            ((TextView)tv).setText("Fragment #" + mNum);
+            return v;
+        }
+
+        @Override
+        public void onActivityCreated(Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+            setListAdapter(new ArrayAdapter<String>(getActivity(),
+                    android.R.layout.simple_list_item_1, lines));
+        }
+
+        @Override
+        public void onListItemClick(ListView l, View v, int position, long id) {
+            Log.i("FragmentList", "Item clicked: " + id);
+        }
     }
 
     class RetrieveFeedTask extends AsyncTask<String, Void, String> {
@@ -65,16 +158,16 @@ public class MainActivity extends AppCompatActivity {
             String output = "";
             try {
                 URL url = new URL(urls[0]);
-                    BufferedReader in = new BufferedReader(
-                            new InputStreamReader(
-                                    url.openStream()));
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(
+                                url.openStream()));
 
-                    String inputLine;
+                String inputLine;
 
-                    while((inputLine = in.readLine()) != null)
-                        output += inputLine;
+                while((inputLine = in.readLine()) != null)
+                    output += inputLine;
 
-                    in.close();
+                in.close();
                 return output;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -83,27 +176,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 }
