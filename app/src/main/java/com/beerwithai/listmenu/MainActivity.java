@@ -146,7 +146,7 @@ public class MainActivity extends FragmentActivity {
 
         @Override
         public CharSequence getPageTitle(int position) {
-            return "Title #" + position;
+            return "SubTitle #" + position;
         }
     }
 
