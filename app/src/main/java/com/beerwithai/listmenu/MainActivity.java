@@ -87,6 +87,60 @@ public class MainActivity extends FragmentActivity {
 
         @Override
         public Fragment getItem(int position) {
+            return new SubTabFragment();
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return "Title #" + position;
+        }
+    }
+
+    public static class SubTabFragment extends Fragment {
+
+        MyAdapter2 mAdapter;
+
+        ViewPager mPager;
+
+        SubTabFragment newInstance(int num) {
+            SubTabFragment f = new SubTabFragment();
+
+            // Supply num input as an argument.
+            Bundle args = new Bundle();
+            args.putInt("num", num);
+            f.setArguments(args);
+
+            return f;
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            View v = inflater.inflate(R.layout.content_main, container, false);
+            mAdapter = new MyAdapter2(getChildFragmentManager());
+
+            mPager = (ViewPager)v.findViewById(R.id.pager2);
+            mPager.setAdapter(mAdapter);
+
+            TabLayout tabLayout = (TabLayout)v.findViewById(R.id.tab_layout2);
+            tabLayout.setupWithViewPager(mPager);
+
+            return v;
+        }
+    }
+
+    public static class MyAdapter2 extends FragmentPagerAdapter {
+        public MyAdapter2(FragmentManager fm) {
+            super(fm);
+        }
+
+        @Override
+        public int getCount() {
+            return NUM_ITEMS;
+        }
+
+        @Override
+        public Fragment getItem(int position) {
             return ArrayListFragment.newInstance(position);
         }
 
@@ -130,7 +184,7 @@ public class MainActivity extends FragmentActivity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View v = inflater.inflate(R.layout.content_main, container, false);
+            View v = inflater.inflate(R.layout.listview, container, false);
             View tv = v.findViewById(R.id.text);
             if(mNum < lines.length)
             ((TextView)tv).setText("Fragment #" + mNum);
